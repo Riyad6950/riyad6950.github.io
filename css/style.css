@@ -386,13 +386,13 @@ body.custom-cursor, body.custom-cursor * { cursor: none !important; }
 /* hero visual */
 .hero-visual { position: relative; display: flex; align-items: center; justify-content: center; min-height: 460px; will-change: transform; }
 /* Big-dash rings behind the RYD card (was small dots) */
-.orbit { position: absolute; overflow: visible; z-index: 0; }
+.orbit { position: absolute; overflow: visible; z-index: 0; top: 50%; left: 50%; }
 .orbit circle { fill: none; stroke-width: 3; stroke-linecap: butt; }
 .orbit--outer { width: 450px; height: 450px; animation: spin 55s linear infinite; }
 .orbit--outer circle { stroke: var(--border); stroke-dasharray: 26 20; }
 .orbit--inner { width: 330px; height: 330px; animation: spin 38s linear infinite reverse; }
 .orbit--inner circle { stroke: var(--red); opacity: 0.55; stroke-dasharray: 18 22; }
-@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes spin { from { transform: translate(-50%,-50%) rotate(0deg); } to { transform: translate(-50%,-50%) rotate(360deg); } }
 
 .profile-card {
     position: relative; width: 300px; padding: 16px;

@@ -596,7 +596,15 @@
                 })(t0);
                 // panels open via CSS at 1.7s; release scroll as they part, then retire the node
                 window.setTimeout(unlockScroll, 2500);
-                window.setTimeout(function () { introGate.style.display = "none"; }, 3100);
+                window.setTimeout(function () {
+                    introGate.style.display = "none";
+                    // iOS Safari IO can mis-fire during overflow:hidden scroll-lock, leaving hero
+                    // with is-still (orbits paused). Force-clear it once the gate is gone.
+                    if (!finePointer) {
+                        var h = doc.querySelector(".hero");
+                        if (h) h.classList.remove("is-still");
+                    }
+                }, 3100);
             }
         } else {
             unlockScroll();
@@ -657,6 +665,54 @@
         if (doc.readyState === "complete") start();
         else window.addEventListener("load", start, { once: true });
     })();
+
+    /* ===========================================================
+       21. Mobile gyroscope — profile card tilts with phone movement.
+            Uses DeviceOrientationEvent (beta = front/back, gamma = left/right).
+            iOS 13+ requires requestPermission() inside a user gesture; we ask
+            on the first touchstart so the dialog appears before the user scrolls.
+    =========================================================== */
+    if (!finePointer && !prefersReduced) {
+        var gyroCard = doc.querySelector(".profile-card");
+        var gBeta = 0, gGamma = 0, cBeta = 0, cGamma = 0, gyroRaf = null;
+
+        function gyroStep() {
+            cBeta  += (gBeta  - cBeta)  * 0.08;
+            cGamma += (gGamma - cGamma) * 0.08;
+            if (gyroCard) {
+                gyroCard.style.transform =
+                    "perspective(900px) rotateX(" + (cBeta * 0.35).toFixed(2) + "deg)" +
+                    " rotateY(" + (cGamma * 0.5).toFixed(2) + "deg)";
+            }
+            gyroRaf = (Math.abs(gBeta - cBeta) + Math.abs(gGamma - cGamma)) > 0.04
+                ? requestAnimationFrame(gyroStep) : null;
+        }
+
+        function onDeviceOrientation(e) {
+            if (e.gamma == null) return;
+            // Offset beta by ~80 so portrait-held phone reads as neutral (0,0)
+            gBeta  = Math.max(-25, Math.min(25, (e.beta  || 0) - 80));
+            gGamma = Math.max(-25, Math.min(25,  e.gamma || 0));
+            if (!gyroRaf) gyroRaf = requestAnimationFrame(gyroStep);
+        }
+
+        function setupGyro() {
+            window.addEventListener("deviceorientation", onDeviceOrientation, { passive: true });
+        }
+
+        if (typeof DeviceOrientationEvent !== "undefined" &&
+            typeof DeviceOrientationEvent.requestPermission === "function") {
+            // iOS 13+ — must request inside a user gesture
+            doc.addEventListener("touchstart", function initGyro() {
+                doc.removeEventListener("touchstart", initGyro);
+                DeviceOrientationEvent.requestPermission()
+                    .then(function (r) { if (r === "granted") setupGyro(); })
+                    .catch(function () {});
+            }, { passive: true });
+        } else if (typeof DeviceOrientationEvent !== "undefined") {
+            setupGyro();
+        }
+    }
 
     console.log("%cRYD. %cportfolio — white × red × black", "color:#ff2d2d;font-weight:bold;font-size:14px", "color:inherit");
 })();

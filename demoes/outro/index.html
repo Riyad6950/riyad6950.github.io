@@ -567,6 +567,44 @@
       });
     }
 
+    /* ── Mobile: "THE END" title reacts to phone tilt (gyroscope) ── */
+    if (isTouchDevice) {
+      let tBeta = 0, tGamma = 0, tCB = 0, tCG = 0, tRaf = null;
+
+      function tiltStep() {
+        tCB += (tBeta  - tCB) * 0.08;
+        tCG += (tGamma - tCG) * 0.08;
+        finalTitle.style.transform =
+          'rotate(' + (tCG * 0.4).toFixed(2) + 'deg) ' +
+          'translate(' + (tCG * 6).toFixed(1) + 'px,' + (tCB * 3).toFixed(1) + 'px)';
+        tRaf = (Math.abs(tBeta - tCB) + Math.abs(tGamma - tCG)) > 0.04
+          ? requestAnimationFrame(tiltStep) : null;
+      }
+
+      function onTitleOrientation(e) {
+        if (e.gamma == null) return;
+        tBeta  = Math.max(-20, Math.min(20, (e.beta  || 0) - 80));
+        tGamma = Math.max(-20, Math.min(20,  e.gamma || 0));
+        if (!tRaf) tRaf = requestAnimationFrame(tiltStep);
+      }
+
+      function setupTitleGyro() {
+        window.addEventListener('deviceorientation', onTitleOrientation, { passive: true });
+      }
+
+      if (typeof DeviceOrientationEvent !== 'undefined' &&
+          typeof DeviceOrientationEvent.requestPermission === 'function') {
+        // iOS 13+ — request on the exit button click (that IS a user gesture)
+        exitBtn.addEventListener('click', () => {
+          DeviceOrientationEvent.requestPermission()
+            .then(r => { if (r === 'granted') setupTitleGyro(); })
+            .catch(() => {});
+        }, { once: true });
+      } else if (typeof DeviceOrientationEvent !== 'undefined') {
+        setupTitleGyro();
+      }
+    }
+
     /* ── Exit dive animation ── */
     let diving = false;
     exitBtn.addEventListener('click', () => {
@@ -616,10 +654,12 @@
         btnRect = reopenBtn.getBoundingClientRect();
         showOrb();
       });
+      /* Only CLOSE the orb on mouse-move leaving the safe zone.
+         Re-opening requires hovering the button directly — not just
+         re-entering the safe zone. */
       document.addEventListener('mousemove', (e) => {
-        if (!btnRect) return;
-        if (inSafeZone(e.clientX, e.clientY)) showOrb();
-        else hideOrb();
+        if (!btnRect || !orbShown) return;
+        if (!inSafeZone(e.clientX, e.clientY)) hideOrb();
       }, { passive: true });
     }
 
