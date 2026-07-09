@@ -506,8 +506,10 @@
     }
 
     // #14 clip-path media reveals
+    // On touch devices, bypass the animation and show immediately — Intersection
+    // Observer can mis-fire on mobile when content-visibility:auto hides sections.
     doc.querySelectorAll(".clip-reveal").forEach(function (el) {
-        if (prefersReduced) el.classList.add("in-view"); else fxObs.observe(el);
+        if (prefersReduced || !finePointer) el.classList.add("in-view"); else fxObs.observe(el);
     });
 
     // #6 giant faint section numbers (auto, from each eyebrow number)

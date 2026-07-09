@@ -608,8 +608,8 @@ a.tag:hover { border-color: var(--red); color: var(--red); }
 
 .contact-socials { display: flex; gap: 12px; }
 .contact-social { display: grid; place-items: center; width: 48px; height: 48px; border: 1.5px solid var(--border);
-    font-size: 1.3rem; color: var(--text); transition: background 0.3s, color 0.3s, border-color 0.3s, transform 0.3s var(--ease); }
-.contact-social:hover { color: var(--red); transform: translateY(-4px); }
+    font-size: 1.3rem; color: var(--text-dim); transition: color 0.3s, border-color 0.3s, transform 0.35s var(--ease), font-size 0.3s var(--ease); }
+.contact-social:hover { color: var(--red); border-color: var(--red); transform: translateY(-4px); font-size: 1.6rem; }
 
 .contact-form { padding: 38px; }
 .field { margin-bottom: 20px; }
@@ -633,8 +633,8 @@ a.tag:hover { border-color: var(--red); color: var(--red); }
 .footer-inner { display: flex; justify-content: space-between; align-items: flex-start; gap: 40px; flex-wrap: wrap; padding-bottom: 44px; }
 .footer-brand p { color: var(--text-dim); font-size: 0.9rem; margin-top: 8px; margin-bottom: 18px; }
 .footer-socials { display: flex; gap: 14px; }
-.footer-social { font-size: 1.3rem; color: var(--text-dim); transition: color 0.3s, transform 0.3s var(--ease); }
-.footer-social:hover { color: var(--red); transform: translateY(-3px); }
+.footer-social { font-size: 1.3rem; color: var(--text-dim); transition: color 0.3s, transform 0.35s var(--ease), font-size 0.3s var(--ease); }
+.footer-social:hover { color: var(--red); transform: translateY(-4px); font-size: 1.6rem; }
 .footer-nav { display: flex; flex-wrap: wrap; gap: 22px; }
 .footer-nav a { color: var(--text-soft); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; transition: color 0.3s; }
 .footer-nav a:hover { color: var(--red); }
@@ -820,8 +820,9 @@ html.is-locked, html.is-locked body { overflow: hidden !important; height: 100%;
     :root { --frame-gap: 10px; }
     .hero { padding-top: 120px; }
     .hero-stats { gap: 28px; }
-    .float-chip--1 { left: -2%; }
-    .float-chip--2 { right: -4%; }
+    .float-chip--1 { left: 4%; }
+    .float-chip--2 { right: 4%; }
+    .float-chip--3 { left: 5%; }
     .timeline { padding-left: 30px; }
     .timeline-dot { left: -30px; }
     .goal-card { padding: 32px 22px; }
@@ -829,9 +830,17 @@ html.is-locked, html.is-locked body { overflow: hidden !important; height: 100%;
     .lang-row { grid-template-columns: 84px 1fr 40px; gap: 10px; }
     .footer-inner { flex-direction: column; gap: 28px; }
     .cursor { display: none; }
+    /* iOS input auto-zoom fix: iOS zooms when input font-size < 16px */
+    .field input, .field textarea { font-size: 16px; }
+    /* Scale down orbits so they don't overflow narrow screens */
+    .orbit--outer { width: 300px; height: 300px; }
+    .orbit--inner { width: 220px; height: 220px; }
+    .profile-card { width: 260px; }
+    /* Clip orbit overflow at the hero-visual boundary */
+    .hero-visual { overflow: hidden; border-radius: 12px; }
 }
 
-@media (max-width: 400px) { .hero-stats { gap: 20px; } .hero-stat .stat-num { font-size: 2rem; } }
+@media (max-width: 400px) { .hero-stats { gap: 20px; } .hero-stat .stat-num { font-size: 2rem; } .orbit--outer { width: 260px; height: 260px; } .orbit--inner { width: 190px; height: 190px; } .profile-card { width: 230px; } }
 
 /* ============================================================
    Performance · off-screen pause · low-power "lite" mode
@@ -859,7 +868,71 @@ html.lite .noise { display: none !important; }
    saving. The bg colour itself provides enough depth without it. */
 html.lite .scroll-progress { box-shadow: none; }
 html.lite .hero-visual { will-change: auto; }
-html.lite .orbit--outer,
-html.lite .orbit--inner,
-html.lite .float-chip,
 html.lite .profile-card { animation: none; }
+
+/* ============================================================
+   Touch / mobile — CSS-level fixes (no JS dependency)
+   Using (hover:none) + (pointer:coarse) reliably targets touch
+   devices in iOS Safari without waiting for JS to add 'lite'.
+   ============================================================ */
+
+/* Stop ONLY the profile-card floatY (this is what creates the "moves with phone"
+   illusion). Orbits and float-chips are intentional decorative animations — keep them. */
+@media (hover: none) and (pointer: coarse) {
+    .profile-card { animation: none !important; will-change: auto !important; }
+    .hero-visual { will-change: auto; }
+    /* Eliminate 300 ms tap delay on all interactive elements */
+    .btn, button, a, .nav-link, .back-top, .exit-btn,
+    .contact-social, .footer-social, .rail-link, .scroll-cue,
+    .tag, .glass-card { touch-action: manipulation; }
+}
+
+/* ============================================================
+   Light mode — contrast & visual polish fixes
+   ============================================================ */
+
+/* Glass cards are near-invisible on white — add a soft shadow for depth */
+[data-theme="light"] .glass-card {
+    box-shadow: 0 2px 16px rgba(0, 0, 0, 0.07), 0 1px 3px rgba(0, 0, 0, 0.05);
+    background: rgba(0, 0, 0, 0.028);
+}
+
+/* The red glow blobs are too vivid on a white page — reduce opacity */
+[data-theme="light"] { --glow-op: 0.18; }
+
+/* Profile card red glow is harsh on white */
+[data-theme="light"] .profile-glow { opacity: 0.18; }
+
+/* Frame border: solid black is too harsh in light mode */
+[data-theme="light"] { --frame: rgba(0, 0, 0, 0.4); }
+
+/* Skill bar track more visible in light mode */
+[data-theme="light"] .skill-bar { background: rgba(0, 0, 0, 0.08); }
+[data-theme="light"] .lang-track { background: rgba(0, 0, 0, 0.08); }
+
+/* Orbit inner ring more visible in light mode */
+[data-theme="light"] .orbit--inner circle { opacity: 0.75; }
+
+/* Section watermarks: slightly more visible in light mode */
+[data-theme="light"] .section-watermark { -webkit-text-stroke-color: rgba(0,0,0,0.1); opacity: 0.7; }
+
+/* Hover states: scope to devices that actually support hover.
+   Prevents "sticky hover" on iOS where :hover stays active after a tap. */
+@media (hover: none) {
+    .about-card:hover,
+    .skill-card:hover,
+    .project-card:hover,
+    .github-stat:hover,
+    .timeline-card:hover { transform: none; box-shadow: none; }
+    .skill-card:hover::before { transform: scaleX(0); }
+    .project-card:hover .project-visual::after { opacity: 0; }
+    .project-card:hover .project-emoji { transform: none; }
+    .contact-social:hover { transform: none; color: var(--text-dim); font-size: 1.3rem; border-color: var(--border); }
+    .contact-row-link:hover { transform: none; }
+    .contact-row-link:hover .contact-ic { background: none; color: var(--red); border-color: var(--border); }
+    .rail-link:hover { transform: none; color: var(--text-dim); }
+    .footer-social:hover { transform: none; color: var(--text-dim); }
+    .back-top:hover { border-color: var(--border); color: var(--text); }
+    .back-top:hover i { transform: none; }
+    .tag:hover { border-color: var(--border); color: var(--text-soft); }
+}
